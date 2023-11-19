@@ -30,78 +30,115 @@
 <!-- 顯示所在道路名稱的 div 元素 -->
 <div id="roadName"></div>
 
+<!-- 設定按鈕 -->
+<button onclick="openSettings()">設定</button>
+
+<!-- 速度警報按鈕 -->
+<button onclick="openSpeedAlert()">速度警報</button>
+
+<!-- 分享按鈕 -->
+<button onclick="shareLocation()">分享位置</button>
+
 <script>
-  // 更新速度和道路名稱的函數
-  function updateSpeedAndRoadName(speed, roadName) {
+let currentSpeed = 0;
+
+// 更新速度和道路名稱的函數
+function updateSpeedAndRoadName(speed, roadName) {
     const speedometer = document.getElementById('speedometer');
     const roadNameElement = document.getElementById('roadName');
-    
+
     // 顯示速度，保留兩位小數，並添加單位
     speedometer.textContent = speed.toFixed(2) + ' km/h';
 
     // 顯示所在道路名稱
     roadNameElement.textContent = roadName || '未知道路';
-  }
+}
 
-  // 獲取地理位置並更新速度和道路名稱
-  function getLocation() {
+// 獲取地理位置並更新速度和道路名稱
+function getLocation() {
     if (navigator.geolocation) {
-      // 使用 watchPosition 方法以持續追蹤位置變化
-      navigator.geolocation.watchPosition(
-        position => {
-          // 速度以米每秒（m/s）為單位，轉換為公里每小時（km/h）
-          const speed = position.coords.speed * 3.6 || 0;
+        // 使用 watchPosition 方法以持續追蹤位置變化
+        navigator.geolocation.watchPosition(
+            position => {
+                // 速度以米每秒（m/s）為單位，轉換為公里每小時（km/h）
+                const speed = position.coords.speed * 3.6 || 0;
 
-          // 獲取道路名稱
-          getAddressFromCoords(position.coords.latitude, position.coords.longitude)
-            .then(roadName => {
-              // 呼叫更新速度和道路名稱函數
-              updateSpeedAndRoadName(speed, roadName);
-            })
-            .catch(error => {
-              console.error('獲取道路名稱時發生錯誤:', error.message);
-              // 呼叫更新速度和道路名稱函數（未知道路名）
-              updateSpeedAndRoadName(speed);
-            });
-        },
-        error => {
-          console.error('獲取GPS數據時發生錯誤:', error.message);
-        }
-      );
+                // 獲取道路名稱
+                getAddressFromCoords(position.coords.latitude, position.coords.longitude)
+                    .then(roadName => {
+                        // 呼叫更新速度和道路名稱函數
+                        updateSpeedAndRoadName(speed, roadName);
+                    })
+                    .catch(error => {
+                        console.error('獲取道路名稱時發生錯誤:', error.message);
+                        // 呼叫更新速度和道路名稱函數（未知道路名）
+                        updateSpeedAndRoadName(speed);
+                    });
+            },
+            error => {
+                console.error('獲取GPS數據時發生錯誤:', error.message);
+            }
+        );
     } else {
-      console.error('此瀏覽器不支援地理位置功能。');
+        console.error('此瀏覽器不支援地理位置功能。');
     }
-  }
+}
 
-  // 使用反向地理編碼獲取道路名稱
-  function getAddressFromCoords(latitude, longitude) {
+// 使用反向地理編碼獲取道路名稱
+function getAddressFromCoords(latitude, longitude) {
     return new Promise((resolve, reject) => {
-      const geocoder = new google.maps.Geocoder();
-      const latLng = new google.maps.LatLng(latitude, longitude);
+        const geocoder = new google.maps.Geocoder();
+        const latLng = new google.maps.LatLng(latitude, longitude);
 
-      geocoder.geocode({ 'latLng': latLng }, (results, status) => {
-        if (status === google.maps.GeocoderStatus.OK) {
-          if (results[0]) {
-            resolve(results[0].formatted_address);
-          } else {
-            reject(new Error('未找到地址'));
-          }
-        } else {
-          reject(new Error('反向地理編碼失敗，錯誤代碼：' + status));
-        }
-      });
+        geocoder.geocode({ 'latLng': latLng }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK) {
+                if (results[0]) {
+                    resolve(results[0].formatted_address);
+                } else {
+                    reject(new Error('未找到地址'));
+                }
+            } else {
+                reject(new Error('反向地理編碼失敗，錯誤代碼：' + status));
+            }
+        });
     });
-  }
+}
 
-  // 每秒更新一次速度和道路名稱
-  setInterval(getLocation, 1000);
+// 打開設定視窗的函數
+function openSettings() {
+    // 在這裡實現彈出設定視窗的邏輯，讓用戶可以進行自定義設定
+    // 例如，顯示一個模態對話框或導向到設定頁面
+    alert("打開設定視窗");
+}
 
-  // 頁面載入時，初始化獲取位置和速度
-  getLocation();
+// 打開速度警報設定視窗的函數
+function openSpeedAlert() {
+    // 在這裡實現彈出速度警報設定的邏輯，讓用戶可以進行速度警報的自定義設定
+    // 例如，顯示一個模態對話框或導向到速度警報設定頁面
+    alert("打開速度警報設定視窗");
+}
+
+// 分享位置的函數
+function shareLocation() {
+    // 使用 Web Share API 來實現分享功能
+    if (navigator.share) {
+        navigator.share({
+            title: '我的行車速度',
+            text: '我目前的行車速度是：' + currentSpeed + ' km/h',
+            url: window.location.href
+        })
+        .then(() => console.log('分享成功'))
+        .catch((error) => console.error('分享失敗', error));
+    } else {
+        alert('瀏覽器不支援分享功能');
+    }
+}
+
+// 每秒更新一次速度和道路名稱
+setInterval(getLocation, 1000);
+
+// 頁面載入時，初始化獲取位置和速度
+getLocation();
 </script>
 
-<!-- 引入 Google Maps JavaScript API，確保在腳本運行之前 -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpJjBeMb2CCifAs8BFsN-f9mR2TBIkToU&libraries=places"></script>
-
-</body>
-</html>
+<!-- 引入 Google Maps JavaScript
