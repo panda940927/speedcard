@@ -5,20 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>機車時速表</title>
   <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
     #speedometer {
-      font-size: 2em;
+      font-size: 3em;
+      text-align: center;
+      color: black; /* 黑色字體 */
     }
 
     #roadName {
       font-size: 1.5em;
     }
 
-    /* 在手機橫向時的樣式 */
-    @media screen and (max-width: 767px) and (orientation: landscape) {
-      #speedometer {
-        font-size: 3em; /* 放大字體大小 */
-        text-align: center; /* 文字置中 */
-      }
+    #speedLimits {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .speedLimitCheckbox {
+      font-size: 1.2em;
+    }
+
+    #soundBtn {
+      font-size: 1.2em;
+      padding: 10px;
     }
   </style>
 </head>
@@ -30,17 +48,25 @@
 <!-- 顯示所在道路名稱的 div 元素 -->
 <div id="roadName"></div>
 
-<!-- 設定按鈕 -->
-<button onclick="openSettings()">設定</button>
+<!-- 速度提醒勾選 -->
+<div id="speedLimits">
+  <label><input type="checkbox" class="speedLimitCheckbox" value="30"> 30 km/h</label>
+  <label><input type="checkbox" class="speedLimitCheckbox" value="40"> 40 km/h</label>
+  <label><input type="checkbox" class="speedLimitCheckbox" value="50"> 50 km/h</label>
+  <label><input type="checkbox" class="speedLimitCheckbox" value="60"> 60 km/h</label>
+  <label><input type="checkbox" class="speedLimitCheckbox" value="70"> 70 km/h</label>
+  <label><input type="checkbox" class="speedLimitCheckbox" value="80"> 80 km/h</label>
+  <label><input type="checkbox" class="speedLimitCheckbox" value="90"> 90 km/h</label>
+  <label><input type="checkbox" class="speedLimitCheckbox" value="100"> 100 km/h</label>
+</div>
 
-<!-- 速度警報按鈕 -->
-<button onclick="openSpeedAlert()">速度警報</button>
-
-<!-- 分享按鈕 -->
-<button onclick="shareLocation()">分享位置</button>
+<!-- 聲音開關按鈕 -->
+<button id="soundBtn" onclick="toggleSound()">開啟聲音</button>
 
 <script>
 let currentSpeed = 0;
+let soundEnabled = true;
+let speedLimits = [];
 
 // 更新速度和道路名稱的函數
 function updateSpeedAndRoadName(speed, roadName) {
@@ -50,8 +76,48 @@ function updateSpeedAndRoadName(speed, roadName) {
     // 顯示速度，保留兩位小數，並添加單位
     speedometer.textContent = speed.toFixed(2) + ' km/h';
 
+    // 超過勾選速度時，將字體改為紅色
+    const exceedSpeedLimit = speedLimits.some(limit => speed > limit);
+    speedometer.style.color = exceedSpeedLimit ? 'red' : 'black';
+
     // 顯示所在道路名稱
     roadNameElement.textContent = roadName || '未知道路';
+
+    // 提醒檢查
+    checkSpeedLimit(speed);
+}
+
+// 檢查時速是否超過限制，並發出提醒
+function checkSpeedLimit(speed) {
+    speedLimits.forEach(limit => {
+        if (speed > limit && soundEnabled) {
+            // 使用簡單的警告聲音，您可能需要使用更複雜的音效
+            playAlertSound();
+            alert(`超過${limit} km/h的速度限制！`);
+        }
+    });
+}
+
+// 播放警告聲音
+function playAlertSound() {
+    const audio = new Audio('path/to/alert.mp3'); // 替換為實際的音效文件路徑
+    audio.play();
+}
+
+// 切換聲音開關
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    document.getElementById('soundBtn').textContent = soundEnabled ? '開啟聲音' : '關閉聲音';
+}
+
+// 設定速度提醒上限
+function setSpeedLimit(limit) {
+    const index = speedLimits.indexOf(limit);
+    if (index !== -1) {
+        speedLimits.splice(index, 1); // 移除已存在的提醒
+    } else {
+        speedLimits.push(limit);
+    }
 }
 
 // 獲取地理位置並更新速度和道路名稱
@@ -104,36 +170,6 @@ function getAddressFromCoords(latitude, longitude) {
     });
 }
 
-// 打開設定視窗的函數
-function openSettings() {
-    // 在這裡實現彈出設定視窗的邏輯，讓用戶可以進行自定義設定
-    // 例如，顯示一個模態對話框或導向到設定頁面
-    alert("打開設定視窗");
-}
-
-// 打開速度警報設定視窗的函數
-function openSpeedAlert() {
-    // 在這裡實現彈出速度警報設定的邏輯，讓用戶可以進行速度警報的自定義設定
-    // 例如，顯示一個模態對話框或導向到速度警報設定頁面
-    alert("打開速度警報設定視窗");
-}
-
-// 分享位置的函數
-function shareLocation() {
-    // 使用 Web Share API 來實現分享功能
-    if (navigator.share) {
-        navigator.share({
-            title: '我的行車速度',
-            text: '我目前的行車速度是：' + currentSpeed + ' km/h',
-            url: window.location.href
-        })
-        .then(() => console.log('分享成功'))
-        .catch((error) => console.error('分享失敗', error));
-    } else {
-        alert('瀏覽器不支援分享功能');
-    }
-}
-
 // 每秒更新一次速度和道路名稱
 setInterval(getLocation, 1000);
 
@@ -145,4 +181,4 @@ getLocation();
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpJjBeMb2CCifAs8BFsN-f9mR2TBIkToU&libraries=places"></script>
 
 </body>
-</html>
+</
