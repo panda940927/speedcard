@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機車時速表</title>
+  <style>
+    #speedometer {
+      font-size: 2em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 顯示速度的 div 元素 -->
+<div id="speedometer">0 km/h</div>
+
+<script>
+  // 更新速度的函數
+  function updateSpeed(speed) {
+    const speedometer = document.getElementById('speedometer');
+    // 顯示速度，保留兩位小數，並添加單位
+    speedometer.textContent = speed.toFixed(2) + ' km/h';
+  }
+
+  // 獲取地理位置並更新速度
+  function getLocation() {
+    if (navigator.geolocation) {
+      // 使用 watchPosition 方法以持續追蹤位置變化
+      navigator.geolocation.watchPosition(
+        position => {
+          // 速度以米每秒（m/s）為單位，轉換為公里每小時（km/h）
+          const speed = position.coords.speed * 3.6 || 0;
+          // 呼叫更新速度函數
+          updateSpeed(speed);
+        },
+        error => {
+          console.error('獲取GPS數據時發生錯誤:', error.message);
+        }
+      );
+    } else {
+      console.error('此瀏覽器不支援地理位置功能。');
+    }
+  }
+
+  // 每秒更新一次速度
+  setInterval(getLocation, 1000);
+
+  // 頁面載入時，初始化獲取位置和速度
+  getLocation();
+</script>
+
+</body>
+</html>
