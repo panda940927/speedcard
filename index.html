@@ -9,6 +9,10 @@
       font-size: 2em;
     }
 
+    #roadName {
+      font-size: 1.5em;
+    }
+
     /* 在手機橫向時的樣式 */
     @media screen and (max-width: 767px) and (orientation: landscape) {
       #speedometer {
@@ -23,15 +27,23 @@
 <!-- 顯示速度的 div 元素 -->
 <div id="speedometer">0 km/h</div>
 
+<!-- 顯示所在道路名稱的 div 元素 -->
+<div id="roadName"></div>
+
 <script>
-  // 更新速度的函數
-  function updateSpeed(speed) {
+  // 更新速度和道路名稱的函數
+  function updateSpeedAndRoadName(speed, roadName) {
     const speedometer = document.getElementById('speedometer');
+    const roadNameElement = document.getElementById('roadName');
+    
     // 顯示速度，保留兩位小數，並添加單位
     speedometer.textContent = speed.toFixed(2) + ' km/h';
+
+    // 顯示所在道路名稱
+    roadNameElement.textContent = roadName || '未知道路';
   }
 
-  // 獲取地理位置並更新速度
+  // 獲取地理位置並更新速度和道路名稱
   function getLocation() {
     if (navigator.geolocation) {
       // 使用 watchPosition 方法以持續追蹤位置變化
@@ -39,8 +51,18 @@
         position => {
           // 速度以米每秒（m/s）為單位，轉換為公里每小時（km/h）
           const speed = position.coords.speed * 3.6 || 0;
-          // 呼叫更新速度函數
-          updateSpeed(speed);
+
+          // 獲取道路名稱
+          getAddressFromCoords(position.coords.latitude, position.coords.longitude)
+            .then(roadName => {
+              // 呼叫更新速度和道路名稱函數
+              updateSpeedAndRoadName(speed, roadName);
+            })
+            .catch(error => {
+              console.error('獲取道路名稱時發生錯誤:', error.message);
+              // 呼叫更新速度和道路名稱函數（未知道路名）
+              updateSpeedAndRoadName(speed);
+            });
         },
         error => {
           console.error('獲取GPS數據時發生錯誤:', error.message);
@@ -51,12 +73,35 @@
     }
   }
 
-  // 每秒更新一次速度
+  // 使用反向地理編碼獲取道路名稱
+  function getAddressFromCoords(latitude, longitude) {
+    return new Promise((resolve, reject) => {
+      const geocoder = new google.maps.Geocoder();
+      const latLng = new google.maps.LatLng(latitude, longitude);
+
+      geocoder.geocode({ 'latLng': latLng }, (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK) {
+          if (results[0]) {
+            resolve(results[0].formatted_address);
+          } else {
+            reject(new Error('未找到地址'));
+          }
+        } else {
+          reject(new Error('反向地理編碼失敗，錯誤代碼：' + status));
+        }
+      });
+    });
+  }
+
+  // 每秒更新一次速度和道路名稱
   setInterval(getLocation, 1000);
 
   // 頁面載入時，初始化獲取位置和速度
   getLocation();
 </script>
+
+<!-- 引入 Google Maps JavaScript API，確保在腳本運行之前 -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpJjBeMb2CCifAs8BFsN-f9mR2TBIkToU&libraries=places"></script>
 
 </body>
 </html>
