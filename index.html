@@ -38,6 +38,17 @@
       font-size: 1.2em;
       padding: 10px;
     }
+
+    #timer {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+
+    #buttons {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-around;
+    }
   </style>
 </head>
 <body>
@@ -63,10 +74,22 @@
 <!-- 聲音開關按鈕 -->
 <button id="soundBtn" onclick="toggleSound()">開啟聲音</button>
 
+<!-- 計時器 -->
+<div id="timer">0:00:00</div>
+
+<!-- 控制按鈕 -->
+<div id="buttons">
+  <button onclick="resetTimer()">重置</button>
+  <button onclick="pauseTimer()">暫停</button>
+</div>
+
 <script>
 let currentSpeed = 0;
 let soundEnabled = true;
 let speedLimits = [];
+let distance = 0;
+let startTime;
+let timerInterval;
 
 // 更新速度和道路名稱的函數
 function updateSpeedAndRoadName(speed, roadName) {
@@ -85,6 +108,9 @@ function updateSpeedAndRoadName(speed, roadName) {
 
     // 提醒檢查
     checkSpeedLimit(speed);
+
+    // 更新計時器
+    updateTimer();
 }
 
 // 檢查時速是否超過限制，並發出提醒
@@ -175,6 +201,53 @@ setInterval(getLocation, 1000);
 
 // 頁面載入時，初始化獲取位置和速度
 getLocation();
+
+// 更新計時器
+function updateTimer() {
+    const timerElement = document.getElementById('timer');
+    if (startTime) {
+        const currentTime = new Date().getTime();
+        const elapsedTime = currentTime - startTime;
+        const hours = Math.floor(elapsedTime / 3600000);
+        const minutes = Math.floor((elapsedTime % 3600000) / 60000);
+        const seconds = Math.floor((elapsedTime % 60000) / 1000);
+        timerElement.textContent = `${hours}:${padZero(minutes)}:${padZero(seconds)}`;
+    }
+}
+
+// 在個位數前補零
+function padZero(number) {
+    return number < 10 ? '0' + number : number;
+}
+
+// 重置計時器
+function resetTimer() {
+    startTime = null;
+    clearInterval(timerInterval);
+    document.getElementById('timer').textContent = '0:00:00';
+    distance = 0;
+}
+
+// 暫停計時器
+function pauseTimer() {
+    clearInterval(timerInterval);
+    const elapsedTime = new Date().getTime() - startTime;
+    const hours = elapsedTime / 3600000;
+    const averageSpeed = distance / hours;
+    alert(`行駛距離：${distance.toFixed(2)} 公里\n時間：${hours.toFixed(2)} 小時\n平均車速：${averageSpeed.toFixed(2)} km/h`);
+}
+
+// 設定計時器每秒更新一次
+timerInterval = setInterval(() => {
+    if (startTime) {
+        const currentTime = new Date().getTime();
+        const elapsedTime = currentTime - startTime;
+        const hours = elapsedTime / 3600000;
+        distance += currentSpeed / 3600; // 每秒的距離，轉換為公里
+        updateTimer();
+    }
+}, 1000);
+
 </script>
 
 <!-- 引入 Google Maps JavaScript API，確保在腳本運行之前 -->
